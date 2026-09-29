@@ -103,14 +103,7 @@ fn test_approval_validity_window() {
 
     let (proofs, amounts, employees) = single_payment_batch(&env, &employee, 10_000);
     let nonce = test_nonce(&env, 30);
-    let run_id = payroll.prepare_payroll_run(
-        &proofs,
-        &amounts,
-        &employees,
-        &10_000,
-        &nonce,
-        &None,
-    );
+    let run_id = payroll.prepare_payroll_run(&proofs, &amounts, &employees, &10_000, &nonce, &None);
 
     payroll.approve_payroll_run(&reviewer, &run_id);
     assert!(!payroll.is_payroll_approval_expired(&run_id, &DEFAULT_APPROVAL_EXPIRY_SECONDS));
@@ -133,14 +126,7 @@ fn test_finalize_panics_after_approval_expiry() {
 
     let (proofs, amounts, employees) = single_payment_batch(&env, &employee, 10_000);
     let nonce = test_nonce(&env, 31);
-    let run_id = payroll.prepare_payroll_run(
-        &proofs,
-        &amounts,
-        &employees,
-        &10_000,
-        &nonce,
-        &None,
-    );
+    let run_id = payroll.prepare_payroll_run(&proofs, &amounts, &employees, &10_000, &nonce, &None);
 
     payroll.approve_payroll_run(&reviewer, &run_id);
 
@@ -165,14 +151,7 @@ fn test_approval_at_exact_expiry_boundary() {
 
     let (proofs, amounts, employees) = single_payment_batch(&env, &employee, 10_000);
     let nonce = test_nonce(&env, 32);
-    let run_id = payroll.prepare_payroll_run(
-        &proofs,
-        &amounts,
-        &employees,
-        &10_000,
-        &nonce,
-        &None,
-    );
+    let run_id = payroll.prepare_payroll_run(&proofs, &amounts, &employees, &10_000, &nonce, &None);
 
     payroll.approve_payroll_run(&reviewer, &run_id);
 
@@ -194,14 +173,7 @@ fn test_approval_one_tick_before_expiry() {
 
     let (proofs, amounts, employees) = single_payment_batch(&env, &employee, 10_000);
     let nonce = test_nonce(&env, 33);
-    let run_id = payroll.prepare_payroll_run(
-        &proofs,
-        &amounts,
-        &employees,
-        &10_000,
-        &nonce,
-        &None,
-    );
+    let run_id = payroll.prepare_payroll_run(&proofs, &amounts, &employees, &10_000, &nonce, &None);
 
     payroll.approve_payroll_run(&reviewer, &run_id);
 
@@ -223,14 +195,7 @@ fn test_approval_one_tick_after_expiry() {
 
     let (proofs, amounts, employees) = single_payment_batch(&env, &employee, 10_000);
     let nonce = test_nonce(&env, 34);
-    let run_id = payroll.prepare_payroll_run(
-        &proofs,
-        &amounts,
-        &employees,
-        &10_000,
-        &nonce,
-        &None,
-    );
+    let run_id = payroll.prepare_payroll_run(&proofs, &amounts, &employees, &10_000, &nonce, &None);
 
     payroll.approve_payroll_run(&reviewer, &run_id);
 
@@ -252,14 +217,7 @@ fn test_finalize_at_exact_expiry_boundary_succeeds() {
 
     let (proofs, amounts, employees) = single_payment_batch(&env, &employee, 10_000);
     let nonce = test_nonce(&env, 35);
-    let run_id = payroll.prepare_payroll_run(
-        &proofs,
-        &amounts,
-        &employees,
-        &10_000,
-        &nonce,
-        &None,
-    );
+    let run_id = payroll.prepare_payroll_run(&proofs, &amounts, &employees, &10_000, &nonce, &None);
 
     payroll.approve_payroll_run(&reviewer, &run_id);
 
@@ -283,14 +241,7 @@ fn test_finalize_one_tick_after_expiry_panics() {
 
     let (proofs, amounts, employees) = single_payment_batch(&env, &employee, 10_000);
     let nonce = test_nonce(&env, 36);
-    let run_id = payroll.prepare_payroll_run(
-        &proofs,
-        &amounts,
-        &employees,
-        &10_000,
-        &nonce,
-        &None,
-    );
+    let run_id = payroll.prepare_payroll_run(&proofs, &amounts, &employees, &10_000, &nonce, &None);
 
     payroll.approve_payroll_run(&reviewer, &run_id);
 
@@ -312,14 +263,7 @@ fn test_approval_expiry_with_custom_expiry_seconds() {
 
     let (proofs, amounts, employees) = single_payment_batch(&env, &employee, 10_000);
     let nonce = test_nonce(&env, 37);
-    let run_id = payroll.prepare_payroll_run(
-        &proofs,
-        &amounts,
-        &employees,
-        &10_000,
-        &nonce,
-        &None,
-    );
+    let run_id = payroll.prepare_payroll_run(&proofs, &amounts, &employees, &10_000, &nonce, &None);
 
     payroll.approve_payroll_run(&reviewer, &run_id);
 
@@ -356,14 +300,7 @@ fn test_multiple_approvals_with_different_timestamps() {
 
     let (proofs, amounts, employees) = single_payment_batch(&env, &employee, 10_000);
     let nonce = test_nonce(&env, 38);
-    let run_id = payroll.prepare_payroll_run(
-        &proofs,
-        &amounts,
-        &employees,
-        &10_000,
-        &nonce,
-        &None,
-    );
+    let run_id = payroll.prepare_payroll_run(&proofs, &amounts, &employees, &10_000, &nonce, &None);
 
     payroll.approve_payroll_run(&reviewer1, &run_id);
 

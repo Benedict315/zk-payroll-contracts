@@ -233,10 +233,7 @@ impl PaymentExecutor {
     /// Validate the canonical token contract used for every executor transfer.
     /// A token contract address is the canonical serialized asset identity;
     /// another address cannot consume this treasury's reserves.
-    pub fn validate_treasury_asset(
-        env: Env,
-        asset: Address,
-    ) -> Result<(), TreasuryError> {
+    pub fn validate_treasury_asset(env: Env, asset: Address) -> Result<(), TreasuryError> {
         let addresses: ContractAddresses = env
             .storage()
             .persistent()

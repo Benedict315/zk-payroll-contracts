@@ -462,7 +462,6 @@ impl PayrollRegistry {
     }
 
     // ── Issue: Versioned Admin Configuration Updates ─────────────────────────────
-
 }
 
 #[contractimpl]

@@ -279,7 +279,10 @@ fn test_reservation_policy_update_before_expiry() {
 
     let updated_reservation = payroll.get_reservation_expiry(&token_id).unwrap();
     assert_eq!(updated_reservation.reserved_amount, 7000i128);
-    assert_eq!(updated_reservation.expires_at, initial_timestamp + 500 + 2000);
+    assert_eq!(
+        updated_reservation.expires_at,
+        initial_timestamp + 500 + 2000
+    );
     assert_eq!(updated_reservation.created_at, initial_timestamp + 500);
 }
 
@@ -320,7 +323,10 @@ fn test_reservation_expiry_very_large_offset() {
     payroll.set_reservation_expiry_policy(&admin, &token_id, &5000i128, &large_expiry_offset);
 
     let reservation = payroll.get_reservation_expiry(&token_id).unwrap();
-    assert_eq!(reservation.expires_at, initial_timestamp + large_expiry_offset);
+    assert_eq!(
+        reservation.expires_at,
+        initial_timestamp + large_expiry_offset
+    );
 
     // Should not be releasable at creation time
     set_timestamp(&env, initial_timestamp);

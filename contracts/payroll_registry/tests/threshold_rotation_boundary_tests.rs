@@ -5,9 +5,9 @@
 
 #![cfg(test)]
 
-use soroban_sdk::{Address, Env};
-use soroban_sdk::testutils::{Address as _, Ledger as _};
 use payroll_registry::PayrollRegistryClient;
+use soroban_sdk::testutils::{Address as _, Ledger as _};
+use soroban_sdk::{Address, Env};
 
 fn setup() -> (Env, Address, u64, Address) {
     let env = Env::default();
