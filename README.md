@@ -11,6 +11,8 @@ ZK Payroll Contracts enable companies to process payroll on-chain while keeping 
 - **Private Salary Commitments** — Salary amounts stored as ZK commitments
 - **Proof-Based Payments** — Verify payments without exposing values
 - **Batch Payroll** — Process multiple employees in single transaction
+- **Period Freeze Guard** — Finalized payroll periods are locked against further edits, with an admin-controlled unfreeze path for authorized corrections
+- **Run Expiration** — Prepared-but-unfinalized payroll runs can expire after a configurable window, releasing reserved funds and stopping stale submissions
 - **Compliance Ready** — Selective disclosure for audits via view keys
 - **On-Chain Verification** — Groth16 proof verification on Soroban
 
@@ -44,6 +46,14 @@ ZK Payroll Contracts enable companies to process payroll on-chain while keeping 
 | `proof_verifier` | Groth16 proof verification using BN254 |
 | `payment_executor` | Private payment execution |
 | `audit_module` | Selective disclosure for compliance |
+
+> **Period lifecycle:** finalized payroll periods are protected by a freeze
+> guard (#471) — see [docs/period-freeze-guard.md](docs/period-freeze-guard.md)
+> for what is blocked, the escape hatches, and the authorized correction flow.
+>
+> **Run lifecycle:** prepared-but-unfinalized runs can expire (#474) — see
+> [docs/run-expiration.md](docs/run-expiration.md) for the expiry policy, the
+> permissionless expiry flow, and SDK guidance.
 
 ## Prerequisites
 
@@ -122,6 +132,33 @@ payroll_registry.accept_admin_rotation(company_id, new_admin);
 - **Event Emission**: `AdminConfigVersionUpdated` events are emitted for reliable change notification
 - **Backward Compatible**: Existing operations continue to work without changes
 
+### Payroll Configuration Audit Events
+
+Every successful configuration change on the `payroll` contract publishes one
+`("payroll", "config_changed", key)` event and bumps a contract-wide revision
+(#490). This covers admin and treasury-owner handoffs, pause manager, asset
+allowlist, company state, capacity limits, settlement windows, period freezes,
+retention policy, reviewers, dispute authorities, reservation expiry, payroll
+currency, and storage version.
+
+```rust
+// data = (actor, subject_ref, previous_ref, new_ref, revision, ledger_sequence, timestamp)
+payroll.set_capacity_limits(&admin, &10, &100, &1_000_000);
+let revision = payroll.get_config_revision(); // 1, 2, 3, ... with no gaps
+```
+
+- **Actor:** the address whose authorization the change required (checked
+  against the stored role).
+- **Value references:** `sha256` of each value's canonical XDR; 32 zero bytes
+  mean "no value". Consecutive changes chain (`previous_ref` = prior
+  `new_ref`).
+- **Privacy:** configuration values are never emitted in plaintext, and no
+  salary, employee, or commitment data is involved.
+- **No-op / failed changes:** no audit event and no revision bump.
+
+See [docs/config-audit-events.md](docs/config-audit-events.md) for the schema,
+key table, and how to verify a reference.
+
 ### Register Employee with Private Salary
 
 ```rust
@@ -135,6 +172,12 @@ payroll_registry.add_employee(
     salary_commitment
 );
 ```
+
+### Employer Access Revocation
+
+An authorized company admin may revoke the company's employer/admin authorization without deleting the company record or historical payroll state. Revocation marks the company as revoked in the canonical registry state, removes the active employer mapping, and blocks subsequent employer-only actions such as employee onboarding, employee status updates, and payroll-period setup for that company.
+
+Existing payroll history remains intact; only the employer authorization is lifted. A revoked employer cannot call employer-only entrypoints until the canonical role state is restored through the repository's existing admin/rotation flows.
 
 ### Process Private Payroll
 
@@ -200,6 +243,15 @@ let processed_count = payroll.batch_process_payroll_bounded(
 - **Progress Tracking**: Tracks `BatchCheckpoint` state (`processed_count` out of `total_count`). Resumption starts at `last_processed_index` without double payments.
 - **Halt-on-Error**: Halts and rolls back state atomically if any single employee payment or proof fails.
 - **Authorization**: Requires operator/admin authorization (`admin.require_auth()`). Rejects empty batch parameters.
+
+For a failed bounded payout checkpoint, first call
+`is_failed_payout_retry_eligible` with the original batch identity and payment
+count. If it returns `true`, the admin can call `resume_failed_payout_retry`
+with the saved checkpoint index, then retry the same batch with the same nonce.
+Completed checkpoints and checkpoints with no remaining payments are rejected.
+The eligibility check returns only a boolean and does not reveal employee or
+salary values. See [Payroll Run State Machine](docs/payroll-state-machine.md)
+for the recovery steps.
 
 ### Compliance Audit
 
@@ -342,6 +394,19 @@ See [contracts/tests/README.md](contracts/tests/README.md) for common local setu
 
 See [docs/errors.md](docs/errors.md) for common contract failure modes,
 retryability guidance, and suggested SDK/dashboard recovery messages.
+
+## Contract Upgrades
+
+Before activating an upgraded contract implementation, validate that the data
+already on chain is still compatible. `payment_executor` exposes a read-only,
+admin-gated preflight that reports schema versions and readiness flags, and
+fails with a typed storage error when an activation should be blocked. The
+report never includes salaries, commitments, employee addresses, or amounts.
+
+See [docs/upgrades.md](docs/upgrades.md#34-pre-activation-compatibility-check) for
+the procedure and remediation table, and
+[docs/architecture/storage-key-versioning.md](docs/architecture/storage-key-versioning.md)
+for the versioning strategy.
 
 ## Deployment Verification Checklist
 

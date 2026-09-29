@@ -23,7 +23,7 @@
 //! predate this module may use other conventions and are preserved for
 //! backward compatibility.
 
-use soroban_sdk::{symbol_short, Address, BytesN, Env, Symbol};
+use soroban_sdk::{contractevent, symbol_short, Address, BytesN, Env, Symbol};
 
 /// Pause category symbols for event emission.
 /// Defined here to avoid circular dependency with pause_manager.
@@ -343,6 +343,14 @@ pub fn emit_company_admin_rotation_cancelled(e: &Env, company_id: u64, caller: A
     );
 }
 
+/// Emitted when a company admin authorization is revoked.
+pub fn emit_company_admin_revoked(e: &Env, company_id: u64, admin: Address) {
+    e.events().publish(
+        (Symbol::new(e, "CompanyAdminRevoked"), company_id, admin),
+        (),
+    );
+}
+
 /// Emitted when a company treasury rotation is proposed.
 pub fn emit_company_treasury_proposed(
     e: &Env,
@@ -527,6 +535,18 @@ pub fn emit_executor_payment_processed(
     e.events().publish(
         (Symbol::new(e, "PayrollProcessed"), company_id),
         (employee, amount, period),
+    );
+}
+
+/// Emitted when withholding configuration is set or updated for a company (issue #538).
+///
+/// No rate values or recipient addresses are included in the event payload to
+/// avoid exposing sensitive operational parameters on-chain. Off-chain indexers
+/// can query `get_withholding_config` if they need the full configuration.
+pub fn emit_withholding_config_set(e: &Env, company_id: u64, actor: Address) {
+    e.events().publish(
+        (Symbol::new(e, "WithholdingCfgSet"), company_id),
+        (actor, e.ledger().timestamp()),
     );
 }
 
@@ -737,6 +757,14 @@ pub fn emit_compliance_hold_released(e: &Env, hold_id: u64, released_by: Address
 // ═════════════════════════════════════════════════════════════════════════════
 // Funding Reservation Expiry Events (#337)
 // ═════════════════════════════════════════════════════════════════════════════
+
+/// Emitted when a funding reservation is created for a payroll batch (#337).
+pub fn emit_reservation_created(e: &Env, asset: Address, reserved_amount: i128, expires_at: u64) {
+    e.events().publish(
+        (payroll_topic(), Symbol::new(e, "reservation_created")),
+        (asset, reserved_amount, expires_at),
+    );
+}
 
 /// Emitted when a funding reservation expires (#337).
 pub fn emit_reservation_expired(e: &Env, asset: Address, amount: i128, expired_at: u64) {
@@ -987,6 +1015,31 @@ pub fn emit_reviewer_removed(e: &Env, reviewer: Address) {
     );
 }
 
+/// Emitted when the maximum concurrently authorized reviewer count is set
+/// or replaced by admin (issue #539).
+pub fn emit_max_reviewers_set(e: &Env, max_reviewers: u32) {
+    e.events().publish(
+        (payroll_topic(), Symbol::new(e, "max_reviewers_set")),
+        max_reviewers,
+    );
+}
+
+/// Emitted when the operator key for signed off-chain authorizations is
+/// registered or replaced by admin (issue #519). Never carries the key
+/// itself in the event; `get_operator_key` is the read path for that.
+pub fn emit_operator_key_registered(e: &Env) {
+    e.events()
+        .publish((payroll_topic(), Symbol::new(e, "operator_key_set")), ());
+}
+
+/// Emitted when the operator key is revoked by admin (issue #519).
+pub fn emit_operator_key_revoked(e: &Env) {
+    e.events().publish(
+        (payroll_topic(), Symbol::new(e, "operator_key_revoked")),
+        (),
+    );
+}
+
 /// Emitted when an authorized reviewer approves a payroll run.
 pub fn emit_run_approved(e: &Env, run_id: u64, reviewer: Address) {
     e.events().publish(
@@ -1089,6 +1142,44 @@ pub fn emit_dispute_resolved(
         (payroll_topic(), Symbol::new(e, "dispute_resolved")),
         (dispute_id, run_id, resolved_by, resolution_reason),
     );
+}
+
+// ── Issue #490: payroll configuration audit events ──────────────────────────
+
+/// Emitted by the Payroll contract once per successful configuration change
+/// (#490). Published through `record_config_change` in the payroll
+/// contract's `config_audit` module.
+///
+/// ```text
+/// topics = ( Symbol("payroll"), Symbol("config_changed"), Symbol(key) )
+/// data   = ( actor, subject_ref, previous_ref, new_ref, revision,
+///            ledger_sequence, timestamp )
+/// ```
+///
+/// Configuration values are never published in plaintext: `subject_ref`,
+/// `previous_ref`, and `new_ref` are `sha256` digests of the canonical XDR
+/// encoding of the subject and values, with an all-zero digest meaning
+/// "no subject" / "no value". See `docs/config-audit-events.md`.
+#[contractevent(topics = ["payroll", "config_changed"], data_format = "vec")]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ConfigChanged {
+    /// Configuration setting that changed (e.g. `"capacity_limits"`).
+    #[topic]
+    pub key: Symbol,
+    /// Authenticated address that made the change.
+    pub actor: Address,
+    /// Digest of the asset, period, or role holder the setting is keyed by.
+    pub subject_ref: BytesN<32>,
+    /// Digest of the value before the change.
+    pub previous_ref: BytesN<32>,
+    /// Digest of the value after the change.
+    pub new_ref: BytesN<32>,
+    /// Contract-wide configuration revision after this change.
+    pub revision: u64,
+    /// Ledger sequence at which the change was applied.
+    pub ledger_sequence: u32,
+    /// Ledger timestamp at which the change was applied.
+    pub timestamp: u64,
 }
 
 // ?????????????????????????????????????????????????????????????????????????????

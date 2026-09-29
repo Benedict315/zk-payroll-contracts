@@ -394,6 +394,7 @@ version = "0.1.0"
 dependencies = [
  "pause_manager",
  "payroll_events",
+ "shared_errors",
  "soroban-sdk",
 ]
 
@@ -1760,6 +1761,7 @@ dependencies = [
  "payroll_registry",
  "proof_verifier",
  "salary_commitment",
+ "shared_errors",
  "soroban-sdk",
  "stellar-strkey 0.0.18",
  "token",
@@ -2200,6 +2202,7 @@ dependencies = [
 name = "payroll"
 version = "0.1.0"
 dependencies = [
+ "ed25519-dalek",
  "pause_manager",
  "payroll_events",
  "payroll_registry",
@@ -2538,6 +2541,15 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
+]
+
+[[package]]
+name = "retention_manager"
+version = "0.1.0"
+dependencies = [
+ "pause_manager",
+ "payroll_events",
+ "soroban-sdk",
 ]
 
 [[package]]
@@ -2881,6 +2893,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.116",
+]
+
+[[package]]
+name = "settlement_window"
+version = "0.1.0"
+dependencies = [
+ "pause_manager",
+ "payroll_events",
+ "soroban-sdk",
 ]
 
 [[package]]
@@ -3485,13 +3506,14 @@ dependencies = [
 
 [[package]]
 name = "tokio-util"
-version = "0.7.18"
+version = "0.7.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ae9cec805b01e8fc3fd2fe289f89149a9b66dd16786abd8b19cfa7b48cb0098"
+checksum = "494815d09bf52b5548659851081238f0ca39ff638363907596da739561c62c52"
 dependencies = [
  "bytes",
  "futures-core",
  "futures-sink",
+ "libc",
  "pin-project-lite",
  "tokio",
 ]
@@ -3558,6 +3580,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a"
 dependencies = [
  "once_cell",
+]
+
+[[package]]
+name = "treasury_isolation"
+version = "0.1.0"
+dependencies = [
+ "pause_manager",
+ "payroll_events",
+ "soroban-sdk",
 ]
 
 [[package]]
