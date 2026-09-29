@@ -290,6 +290,48 @@ execution, and audit access — with sample payloads and input/output tables.
 See [docs/events.md](docs/events.md) for the full event schema reference and
 consumption expectations.
 
+## Clock Boundary Testing
+
+The contracts include comprehensive clock boundary tests to ensure timestamp-based cutoff mechanisms work correctly at exact boundaries and adjacent edge cases. These tests improve reliability of time-sensitive payroll operations:
+
+### Boundary Test Coverage
+
+- **Settlement Window Enforcement** (`contracts/payroll/tests/settlement_window_enforcement.rs`)
+  - Exact boundary tests for `open_at`, `execution_start`, `execution_end`, and `close_at` timestamps
+  - Adjacent boundary cases (one tick before/after each cutoff)
+  - Mid-period and mid-grace period validations
+  - Grace period cancellation and expiration at boundaries
+
+- **Approval Expiry** (`contracts/payroll/tests/approval_expiry.rs`)
+  - Exact expiry boundary validation
+  - One tick before/after expiry cases
+  - Custom expiry period boundaries
+  - Multiple approvals with different timestamps
+
+- **Threshold Rotation Grace Periods** (`contracts/payroll_registry/tests/threshold_rotation_boundary_tests.rs`)
+  - Exact grace period boundary activation
+  - Adjacent timestamp validation for rotation proposals
+  - Zero grace period edge cases
+  - Cancellation before/after grace period boundaries
+
+- **Reservation Expiry** (`contracts/payroll/tests/reservation_expiry_boundary_tests.rs`)
+  - Exact expiry boundary release operations
+  - One tick before/after expiry validation
+  - Zero and large expiry offset edge cases
+  - Multiple reservations with different expiry times
+
+### Running Boundary Tests
+
+```bash
+# Run all boundary tests
+cargo test --test settlement_window_enforcement
+cargo test --test approval_expiry
+cargo test --test threshold_rotation_boundary_tests
+cargo test --test reservation_expiry_boundary_tests
+```
+
+These boundary tests ensure that payroll cutoffs work reliably at exact timestamps and prevent edge case failures in production.
+
 ## Local Setup & Test Troubleshooting
 
 See [contracts/README.md](contracts/README.md) for **environment variables**, local test setup expectations, and a quick manual verification checklist.
